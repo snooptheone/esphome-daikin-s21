@@ -38,32 +38,37 @@ void DaikinS21Climate::dump_config() {
   this->dump_traits_(TAG);
 }
 
+void DaikinS21Climate::set_supported_modes(const std::set<climate::ClimateMode> &modes) {
+  this->traits_.set_supported_modes(modes);
+  this->traits_.add_supported_mode(climate::CLIMATE_MODE_OFF);   // Always available
+  this->traits_.add_supported_mode(climate::CLIMATE_MODE_AUTO);  // Always available
+}
+
 climate::ClimateTraits DaikinS21Climate::traits() {
-  auto traits = climate::ClimateTraits();
 
-  traits.set_supports_action(true);
+  this->traits_.set_supports_action(true);
 
-  traits.set_supports_current_temperature(true);
-  traits.set_visual_min_temperature(SETPOINT_MIN);
-  traits.set_visual_max_temperature(SETPOINT_MAX);
-  traits.set_visual_temperature_step(SETPOINT_STEP);
-  traits.set_supports_two_point_target_temperature(false);
+  this->traits_.set_supports_current_temperature(true);
+  this->traits_.set_visual_min_temperature(SETPOINT_MIN);
+  this->traits_.set_visual_max_temperature(SETPOINT_MAX);
+  this->traits_.set_visual_temperature_step(SETPOINT_STEP);
+  this->traits_.set_supports_two_point_target_temperature(false);
 
-  traits.set_supported_modes(
+  this->traits_.set_supported_modes(
       {climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_HEAT_COOL,
        climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT,
        climate::CLIMATE_MODE_FAN_ONLY, climate::CLIMATE_MODE_DRY});
 
-  traits.set_supported_custom_fan_modes({"Automatic", "1", "2", "3", "4", "5"});
+  this->traits_.set_supported_custom_fan_modes({"Automatic", "1", "2", "3", "4", "5"});
 
-  traits.set_supported_swing_modes({
+  this->traits_.set_supported_swing_modes({
       climate::CLIMATE_SWING_OFF,
       climate::CLIMATE_SWING_BOTH,
       climate::CLIMATE_SWING_VERTICAL,
       climate::CLIMATE_SWING_HORIZONTAL,
   });
 
-  return traits;
+  return this->traits_;
 }
 
 bool DaikinS21Climate::use_room_sensor() {
@@ -125,7 +130,7 @@ void DaikinS21Climate::save_setpoint(float value, ESPPreferenceObject &pref) {
 }
 
 void DaikinS21Climate::save_setpoint(float value) {
-  auto mode = this->s21->get_climate_mode();
+  auto mode = this->e2d_climate_mode(this->mode);
   optional<float> prev = this->load_setpoint(mode);
   // Only save if value is diff from what's already saved.
   if (abs(value - prev.value_or(0.0)) >= SETPOINT_STEP) {
@@ -153,7 +158,7 @@ optional<float> DaikinS21Climate::load_setpoint(ESPPreferenceObject &pref) {
 
 optional<float> DaikinS21Climate::load_setpoint(DaikinClimateMode mode) {
   optional<float> loaded;
-  switch (this->s21->get_climate_mode()) {
+  switch (mode) {
     case DaikinClimateMode::Auto:
       loaded = this->load_setpoint(this->auto_setpoint_pref);
       break;
@@ -333,7 +338,7 @@ void DaikinS21Climate::update() {
       // the target temperature here if it appears uninitialized.
       float current_s21_sp = this->s21->get_setpoint();
       float unexpected_diff = abs(this->expected_s21_setpoint - current_s21_sp);
-      if (this->target_temperature == 0.0) {
+      if (this->target_temperature == 0.0 || isnanf(this->target_temperature)) {
         // Use stored setpoint for mode, or fall back to use s21's setpoint.
         auto stored = this->load_setpoint(this->s21->get_climate_mode());
         this->target_temperature = stored.value_or(current_s21_sp);

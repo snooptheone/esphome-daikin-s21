@@ -48,8 +48,9 @@ class DaikinS21Climate : public climate::Climate,
   climate::ClimateSwingMode d2e_swing_mode(bool swing_v, bool swing_h);
   bool e2d_swing_v(climate::ClimateSwingMode mode);
   bool e2d_swing_h(climate::ClimateSwingMode mode);
-
+  void set_supported_modes(const std::set<esphome::climate::ClimateMode> &modes);
  protected:
+  esphome::climate::ClimateTraits traits_;
   sensor::Sensor *room_sensor_{nullptr};
   float expected_s21_setpoint;
   uint8_t skip_setpoint_checks = 0;
