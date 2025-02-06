@@ -227,6 +227,8 @@ DaikinClimateMode DaikinS21Climate::e2d_climate_mode(
 
 const std::string DaikinS21Climate::d2e_fan_mode(DaikinFanMode mode) {
   switch (mode) {
+    case DaikinFanMode::Silent:
+      return "Silent";
     case DaikinFanMode::Speed1:
       return "1";
     case DaikinFanMode::Speed2:
@@ -237,8 +239,6 @@ const std::string DaikinS21Climate::d2e_fan_mode(DaikinFanMode mode) {
       return "4";
     case DaikinFanMode::Speed5:
       return "5";
-    case DaikinFanMode::Silent:
-      return "Silent";
     case DaikinFanMode::Auto:
     default:
       return "Automatic";
@@ -248,6 +248,8 @@ const std::string DaikinS21Climate::d2e_fan_mode(DaikinFanMode mode) {
 DaikinFanMode DaikinS21Climate::e2d_fan_mode(std::string mode) {
   if (mode == "Automatic")
     return DaikinFanMode::Auto;
+  if (mode == "Silent")
+    return DaikinFanMode::Silent;
   if (mode == "1")
     return DaikinFanMode::Speed1;
   if (mode == "2")
@@ -258,8 +260,6 @@ DaikinFanMode DaikinS21Climate::e2d_fan_mode(std::string mode) {
     return DaikinFanMode::Speed4;
   if (mode == "5")
     return DaikinFanMode::Speed5;
-  if (mode == "Silent")
-    return DaikinFanMode::Silent;
   return DaikinFanMode::Auto;
 }
 

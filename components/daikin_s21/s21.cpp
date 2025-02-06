@@ -37,6 +37,8 @@ std::string daikin_fan_mode_to_string(DaikinFanMode mode) {
   switch (mode) {
     case DaikinFanMode::Auto:
       return "Auto";
+    case DaikinFanMode::Silent:
+      return "Silent";
     case DaikinFanMode::Speed1:
       return "1";
     case DaikinFanMode::Speed2:
@@ -47,8 +49,6 @@ std::string daikin_fan_mode_to_string(DaikinFanMode mode) {
       return "4";
     case DaikinFanMode::Speed5:
       return "5";
-    case DaikinFanMode::Silent:
-      return "Silent";
     default:
       return "UNKNOWN";
   }
@@ -357,10 +357,10 @@ bool DaikinS21::run_queries(std::vector<std::string> queries) {
 
 void DaikinS21::update() {
   std::vector<std::string> queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
-  std::vector<std::string> failable_queries = {"F9", "FM", "F7", "F6", "F2", "F3", "F4", "F8", "RA", "Rb", "RB", "RC", "RD", "Re", "RE", "RF", "Rg", "RG", "RK", "RM", "RN", "RW", "RX", "XA", "XE"};
+  // std::vector<std::string> failable_queries = {"F9", "FM", "F7", "F6", "F2", "F3", "F4", "F8", "RA", "Rb", "RB", "RC", "RD", "Re", "RE", "RF", "Rg", "RG", "RK", "RM", "RN", "RW", "RX", "XA", "XE"};
   if (this->run_queries(queries)) {
-    ESP_LOGD(TAG, "** FAILABLE QUERIES **");
-    this->run_queries(failable_queries);
+    // ESP_LOGD(TAG, "** FAILABLE QUERIES **");
+    // this->run_queries(failable_queries);
     if(!this->ready) {
       ESP_LOGI(TAG, "Daikin S21 Ready");
       this->ready = true;
