@@ -59,7 +59,7 @@ climate::ClimateTraits DaikinS21Climate::traits() {
        climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT,
        climate::CLIMATE_MODE_FAN_ONLY, climate::CLIMATE_MODE_DRY});
 
-  this->traits_.set_supported_custom_fan_modes({"Automatic", "1", "2", "3", "4", "5"});
+  this->traits_.set_supported_custom_fan_modes({"Automatic", "Silent", "1", "2", "3", "4", "5"});
 
   this->traits_.set_supported_swing_modes({
       climate::CLIMATE_SWING_OFF,
@@ -237,6 +237,8 @@ const std::string DaikinS21Climate::d2e_fan_mode(DaikinFanMode mode) {
       return "4";
     case DaikinFanMode::Speed5:
       return "5";
+    case DaikinFanMode::Silent:
+      return "Silent";
     case DaikinFanMode::Auto:
     default:
       return "Automatic";
@@ -256,6 +258,8 @@ DaikinFanMode DaikinS21Climate::e2d_fan_mode(std::string mode) {
     return DaikinFanMode::Speed4;
   if (mode == "5")
     return DaikinFanMode::Speed5;
+  if (mode == "Silent")
+    return DaikinFanMode::Silent;
   return DaikinFanMode::Auto;
 }
 

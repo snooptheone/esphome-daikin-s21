@@ -47,6 +47,8 @@ std::string daikin_fan_mode_to_string(DaikinFanMode mode) {
       return "4";
     case DaikinFanMode::Speed5:
       return "5";
+    case DaikinFanMode::Silent:
+      return "Silent";
     default:
       return "UNKNOWN";
   }
@@ -355,9 +357,12 @@ bool DaikinS21::run_queries(std::vector<std::string> queries) {
 
 void DaikinS21::update() {
   std::vector<std::string> queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
-  if (this->run_queries(queries) && !this->ready) {
-    ESP_LOGI(TAG, "Daikin S21 Ready");
-    this->ready = true;
+  std::vector<std::string> failable_queries = {"F9", "FM", "F7", "F6"};
+  if (this->run_queries(queries)) {
+    this->run_queries(failable_queries);
+    if(!this->ready) {
+      ESP_LOGI(TAG, "Daikin S21 Ready");
+      this->ready = true;
   }
   if (this->debug_protocol) {
     this->dump_state();
