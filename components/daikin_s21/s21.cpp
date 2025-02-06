@@ -357,12 +357,14 @@ bool DaikinS21::run_queries(std::vector<std::string> queries) {
 
 void DaikinS21::update() {
   std::vector<std::string> queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
-  std::vector<std::string> failable_queries = {"F9", "FM", "F7", "F6"};
+  std::vector<std::string> failable_queries = {"F9", "FM", "F7", "F6", "F2", "F3", "F4", "F8", "RA", "Rb", "RB", "RC", "RD", "Re", "RE", "RF", "Rg", "RG", "RK", "RM", "RN", "RW", "RX", "XA", "XE"};
   if (this->run_queries(queries)) {
+    ESP_LOGD(TAG, "** FAILABLE QUERIES **");
     this->run_queries(failable_queries);
     if(!this->ready) {
       ESP_LOGI(TAG, "Daikin S21 Ready");
       this->ready = true;
+    }
   }
   if (this->debug_protocol) {
     this->dump_state();
