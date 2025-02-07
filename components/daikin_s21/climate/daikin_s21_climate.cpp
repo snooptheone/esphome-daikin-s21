@@ -310,7 +310,7 @@ climate::ClimateAction DaikinS21Climate::d2e_climate_action() {
   }
 }
 
-climate::ClimatePreset DaikinS21Climate::d2e_preset_mode(bool powerful, bool econo)
+climate::ClimatePreset DaikinS21Climate::d2e_preset_mode(bool powerful, bool econo, bool confort)
 {
   if(powerful)
     return climate::CLIMATE_PRESET_BOOST;
