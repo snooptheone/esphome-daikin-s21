@@ -421,7 +421,7 @@ void DaikinS21::dump_state() {
   float degc = this->setpoint / 10.0;
   float degf = degc * 1.8 + 32.0;
   ESP_LOGD(TAG, " Target: %.1f C (%.1f F)", degc, degf);
-  ESP_LOGD(TAG, " Target Temp: %.1f", this->target_temperature);
+  // ESP_LOGD(TAG, " Target Temp: %.1f", this->target_temperature);
   ESP_LOGD(TAG, " Preset: %s", this->powerful ? "Powerful" : this->econo ? "Econo" : this->confort ? "Confort" : "None");
   ESP_LOGD(TAG, "    Fan: %s (%d rpm)",
            daikin_fan_mode_to_string(this->fan).c_str(), this->fan_rpm);
