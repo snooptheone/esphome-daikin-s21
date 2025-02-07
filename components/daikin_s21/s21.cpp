@@ -474,6 +474,7 @@ void DaikinS21::set_swing_settings(bool swing_v, bool swing_h) {
 
 void DaikinS21::set_powerful_settings(bool value)
 {
+  // this->powerful = (payload[0] == '2') ? 1 : 0;
   std::vector<uint8_t> cmd = {
       (uint8_t) ('0' + (value ? 2 : 0)), '0', '0', '0'};
   ESP_LOGD(TAG, "Sending swing CMD (D6): %s", str_repr(cmd).c_str());
@@ -498,10 +499,12 @@ void DaikinS21::set_econo_settings(bool value)
 
 void DaikinS21::set_confort_settings(bool value)
 {
+  // this->confort = (payload[0] == '@') ? 1 : 0;
   std::vector<uint8_t> cmd = {
-      '0', '0', (uint8_t) ('0' + (value ? 2 : 0)), '0'};
-  ESP_LOGD(TAG, "Sending swing CMD (??): %s", str_repr(cmd).c_str());
-  if (!this->send_cmd({'?', '?'}, cmd)) {
+      '0', (uint8_t) ('0' + (value? 40 : 0)), '0', '0'};
+
+  ESP_LOGD(TAG, "Sending swing CMD (D6): %s", str_repr(cmd).c_str());
+  if (!this->send_cmd({'D', '6'}, cmd)) {
     ESP_LOGW(TAG, "Failed confort CMD");
   } else {
     this->update();
