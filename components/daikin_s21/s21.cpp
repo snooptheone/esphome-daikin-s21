@@ -324,13 +324,15 @@ bool DaikinS21::parse_response(std::vector<uint8_t> rcode,
           this->swing_v = payload[0] & 1;
           this->swing_h = payload[0] & 2;
           return true;
-        case '6':                // F6 -> G6 - "powerful" mode
+        case '6':                // F6 -> G6 - "powerful" mode and some others
           this->powerful = (payload[0] == '2') ? 1 : 0;
+          this->confort = (payload[0] == '@') ? 1 : 0;
+          // this->quiet = (payload[0] & 0x80) ? 1 : 0;
+          // this.sensor = (payload[3] & 0x08 ) ? 1 : 0;
           return true;
         case '7':                // F7 - G7 - "eco" mode
           this->econo = (payload[1] == '2') ? 1 : 0;
           return true;
-        // TODO: Need to implement confort mode
       }
       break;
     case 'S':      // R -> S
@@ -350,6 +352,7 @@ bool DaikinS21::parse_response(std::vector<uint8_t> rcode,
         case 'd':  // Compressor state / frequency? Idle if 0.
           this->idle =
               (payload[0] == '0' && payload[1] == '0' && payload[2] == '0');
+          this->compressor = bytes_to_num(payload);
           return true;
         default:
           if (payload.size() > 3) {
@@ -379,7 +382,6 @@ bool DaikinS21::run_queries(std::vector<std::string> queries) {
 
 void DaikinS21::update() {
   std::vector<std::string> queries;
-  // TODO: Implement confort mode
   if(has_presets)
     queries = {"F1", "F5", "F6", "F7",  "RH", "RI", "Ra", "RL", "Rd"};
   else

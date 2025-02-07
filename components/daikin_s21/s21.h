@@ -93,6 +93,7 @@ class DaikinS21 : public PollingComponent {
   int16_t temp_outside = 0;
   int16_t temp_coil = 0;
   uint16_t fan_rpm = 0;
+  uint16_t compressor = 0;
   bool idle = true;
   bool has_presets = true;
 };
