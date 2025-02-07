@@ -193,6 +193,21 @@ std::string str_repr(std::vector<uint8_t> &bytes) {
   return str_repr(&bytes[0], bytes.size());
 }
 
+bool DaikinS21::wait_byte_available(uint32_t  timeout)
+{
+  uint32_t start = millis();
+  bool reading = false;
+  while (true) {
+    if (millis() - start > timeout) {
+      ESP_LOGW(TAG, "Timeout waiting for byte");
+      return false;
+    }
+    if(this->rx_uart->available())
+      return true;
+    yield();
+  }
+}
+
 bool DaikinS21::read_frame(std::vector<uint8_t> &payload) {
   uint8_t byte;
   std::vector<uint8_t> bytes;
@@ -253,7 +268,7 @@ bool DaikinS21::s21_query(std::vector<uint8_t> code) {
     c += code[i];
   }
   this->write_frame(code);
-
+  this->wait_byte_available(S21_RESPONSE_TIMEOUT);
   uint8_t byte;
   if (!this->rx_uart->read_byte(&byte)) {
     ESP_LOGW(TAG, "Timeout waiting for %s response", c.c_str());
@@ -309,6 +324,13 @@ bool DaikinS21::parse_response(std::vector<uint8_t> rcode,
           this->swing_v = payload[0] & 1;
           this->swing_h = payload[0] & 2;
           return true;
+        case '6':                // F6 -> G6 - "powerful" mode
+          this->powerful = (payload[0] == '2') ? 1 : 0;
+          return true;
+        case '7':                // F7 - G7 - "eco" mode
+          this->econo = (payload[1] == '2') ? 1 : 0;
+          return true;
+        // TODO: Need to implement confort mode
       }
       break;
     case 'S':      // R -> S
@@ -356,7 +378,13 @@ bool DaikinS21::run_queries(std::vector<std::string> queries) {
 }
 
 void DaikinS21::update() {
-  std::vector<std::string> queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
+  std::vector<std::string> queries;
+  // TODO: Implement confort mode
+  if(has_presets)
+    queries = {"F1", "F5", "F6", "F7",  "RH", "RI", "Ra", "RL", "Rd"};
+  else
+    queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
+  // std::vector<std::string> queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
   // std::vector<std::string> failable_queries = {"F9", "FM", "F7", "F6", "F2", "F3", "F4", "F8", "RA", "Rb", "RB", "RC", "RD", "Re", "RE", "RF", "Rg", "RG", "RK", "RM", "RN", "RW", "RX", "XA", "XE"};
   if (this->run_queries(queries)) {
     // ESP_LOGD(TAG, "** FAILABLE QUERIES **");
@@ -440,6 +468,44 @@ void DaikinS21::set_swing_settings(bool swing_v, bool swing_h) {
   }
 }
 
+void DaikinS21::set_powerful_settings(bool value)
+{
+  std::vector<uint8_t> cmd = {
+      (uint8_t) ('0' + (value ? 2 : 0)), '0', '0', '0'};
+  ESP_LOGD(TAG, "Sending swing CMD (D6): %s", str_repr(cmd).c_str());
+  if (!this->send_cmd({'D', '6'}, cmd)) {
+    ESP_LOGW(TAG, "Failed powerful CMD");
+  } else {
+    this->update();
+  }
+}
+
+void DaikinS21::set_econo_settings(bool value)
+{
+  std::vector<uint8_t> cmd = {
+      '0', (uint8_t) ('0' + (value ? 2 : 0)), '0', '0'};
+  ESP_LOGD(TAG, "Sending swing CMD (D7): %s", str_repr(cmd).c_str());
+  if (!this->send_cmd({'D', '7'}, cmd)) {
+    ESP_LOGW(TAG, "Failed econo CMD");
+  } else {
+    this->update();
+  }
+}
+
+void DaikinS21::set_confort_settings(bool value)
+{
+  std::vector<uint8_t> cmd = {
+      '0', '0', (uint8_t) ('0' + (value ? 2 : 0)), '0'};
+  ESP_LOGD(TAG, "Sending swing CMD (??): %s", str_repr(cmd).c_str());
+  if (!this->send_cmd({'?', '?'}, cmd)) {
+    ESP_LOGW(TAG, "Failed confort CMD");
+  } else {
+    this->update();
+  }
+}
+
+
+
 bool DaikinS21::send_cmd(std::vector<uint8_t> code,
                          std::vector<uint8_t> payload) {
   std::vector<uint8_t> frame;
@@ -453,6 +519,7 @@ bool DaikinS21::send_cmd(std::vector<uint8_t> code,
   }
 
   this->write_frame(frame);
+  this->wait_byte_available(S21_RESPONSE_TIMEOUT);
   if (!this->rx_uart->read_byte(&byte)) {
     ESP_LOGW(TAG, "Timeout waiting for ACK to %s", str_repr(frame).c_str());
     return false;

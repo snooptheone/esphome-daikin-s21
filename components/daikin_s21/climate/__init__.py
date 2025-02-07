@@ -16,6 +16,7 @@ from esphome.components.climate import ClimateMode
 
 CONF_ROOM_TEMPERATURE_SENSOR = "room_temperature_sensor"
 CONF_SETPOINT_INTERVAL = "setpoint_interval"
+CONF_HAS_PRESETS = "has_presets"
 
 DaikinS21Climate = daikin_s21_ns.class_(
     "DaikinS21Climate", climate.Climate, cg.PollingComponent, DaikinS21Client
@@ -43,6 +44,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_SUPPORTED_MODES): cv.ensure_list(
                 cv.enum(SUPPORTED_CLIMATE_MODES_OPTIONS, upper=True)
             ),
+            cv.Optional(CONF_HAS_PRESETS, default=True): cv.boolean,
         }
     )
     .extend(cv.polling_component_schema("5s"))
@@ -72,3 +74,5 @@ async def to_code(config):
             ClimateMode.CLIMATE_MODE_DRY,
             ClimateMode.CLIMATE_MODE_FAN_ONLY,
         ]))
+    if CONF_HAS_PRESETS in config:
+        cg.add(var.set_has_presets(config[CONF_HAS_PRESETS]))

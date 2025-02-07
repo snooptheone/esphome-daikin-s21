@@ -68,6 +68,16 @@ climate::ClimateTraits DaikinS21Climate::traits() {
       climate::CLIMATE_SWING_HORIZONTAL,
   });
 
+   if(this->has_presets)
+  {
+    this->traits_.set_supported_presets({
+      climate::CLIMATE_PRESET_NONE,
+      climate::CLIMATE_PRESET_BOOST,
+      climate::CLIMATE_PRESET_ECO,
+      climate::CLIMATE_PRESET_COMFORT,
+    });
+  }
+
   return this->traits_;
 }
 
@@ -144,6 +154,8 @@ void DaikinS21Climate::save_setpoint(float value) {
       case DaikinClimateMode::Heat:
         this->save_setpoint(value, this->heat_setpoint_pref);
         break;
+      default:
+        break;
     }
   }
 }
@@ -153,7 +165,11 @@ optional<float> DaikinS21Climate::load_setpoint(ESPPreferenceObject &pref) {
   if (!pref.load(&stored_val)) {
     return {};
   }
-  return static_cast<float>(stored_val) / 10.0;
+  float result = static_cast<float>(stored_val) / 10.0;
+  if(result<0)
+    result = 0;
+  return result;
+  // return static_cast<float>(stored_val) / 10.0;
 }
 
 optional<float> DaikinS21Climate::load_setpoint(DaikinClimateMode mode) {
@@ -167,6 +183,8 @@ optional<float> DaikinS21Climate::load_setpoint(DaikinClimateMode mode) {
       break;
     case DaikinClimateMode::Heat:
       loaded = this->load_setpoint(this->heat_setpoint_pref);
+      break;
+    default:
       break;
   }
   return loaded;
@@ -292,6 +310,32 @@ climate::ClimateAction DaikinS21Climate::d2e_climate_action() {
   }
 }
 
+climate::ClimatePreset DaikinS21Climate::d2e_preset_mode(bool powerful, bool econo)
+{
+  if(powerful)
+    return climate::CLIMATE_PRESET_BOOST;
+  if(econo)
+    return climate::CLIMATE_PRESET_ECO;
+  if(confort)
+    return climate::CLIMATE_PRESET_COMFORT;
+  return climate::CLIMATE_PRESET_NONE;
+}
+
+bool DaikinS21Climate::e2d_powerful(climate::ClimatePreset mode)
+{
+  return mode==climate::CLIMATE_PRESET_BOOST;
+}
+
+bool DaikinS21Climate::e2d_econo(climate::ClimatePreset mode)
+{
+  return mode==climate::CLIMATE_PRESET_ECO;
+}
+
+bool DaikinS21Climate::e2d_confort(climate::ClimatePreset mode)
+{
+  return mode==climate::CLIMATE_PRESET_COMFORT;
+}
+
 climate::ClimateSwingMode DaikinS21Climate::d2e_swing_mode(bool swing_v,
                                                            bool swing_h) {
   if (swing_v && swing_h)
@@ -408,7 +452,12 @@ void DaikinS21Climate::control(const climate::ClimateCall &call) {
     this->s21->set_swing_settings(this->e2d_swing_v(swing_mode),
                                   this->e2d_swing_h(swing_mode));
   }
-
+  if (call.get_preset().has_value()) {
+    climate::ClimatePreset preset = call.get_preset().value();
+    this->s21->set_powerful_settings(this->e2d_powerful(preset));
+    this->s21->set_econo_settings(this->e2d_econo(preset));
+    this->s21->set_confort_settings(this->e2d_confort(preset));
+  }
   this->update();
 }
 
@@ -416,7 +465,8 @@ void DaikinS21Climate::set_s21_climate() {
   this->expected_s21_setpoint =
       this->calc_s21_setpoint(this->target_temperature);
   ESP_LOGI(TAG, "Controlling S21 climate:");
-  ESP_LOGI(TAG, "  Mode: %s", climate::climate_mode_to_string(this->mode));
+  ESP_LOGI(TAG, "  Mode: %s", LOG_STR_ARG(climate::climate_mode_to_string(this->mode)));
+  // ESP_LOGI(TAG, "  Mode: %s", climate::climate_mode_to_string(this->mode));
   ESP_LOGI(TAG, "  Setpoint: %.1f (s21: %.1f)", this->target_temperature,
            this->expected_s21_setpoint);
   ESP_LOGI(TAG, "  Fan: %s", this->custom_fan_mode.value().c_str());
