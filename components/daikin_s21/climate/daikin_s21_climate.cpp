@@ -391,6 +391,7 @@ void DaikinS21Climate::update() {
         auto stored = this->load_setpoint(this->s21->get_climate_mode());
         this->target_temperature = stored.value_or(current_s21_sp);
         this->set_s21_climate();
+        ESP_LOGI(TAG, "Target temp initialized to %.1f", this->target_temperature);
       } else if (unexpected_diff >= SETPOINT_STEP) {
         // User probably set temp via IR remote -- so try to honor their wish by
         // matching controller's target value to what they sent via remote.
