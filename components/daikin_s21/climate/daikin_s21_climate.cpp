@@ -1,5 +1,3 @@
-#pragma once
-
 #include <cinttypes>
 #include "esphome/core/defines.h"
 #include "esphome/core/hal.h"
