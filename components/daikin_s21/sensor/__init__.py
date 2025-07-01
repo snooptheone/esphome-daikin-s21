@@ -25,7 +25,6 @@ DaikinS21Sensor = daikin_s21_ns.class_(
     "DaikinS21Sensor", cg.PollingComponent, DaikinS21Client
 )
 
-CONF_S21_ID = "s21_id"
 CONF_INSIDE_TEMP = "inside_temperature"
 CONF_OUTSIDE_TEMP = "outside_temperature"
 CONF_COIL_TEMP = "coil_temperature"
@@ -34,7 +33,7 @@ CONF_FAN_SPEED = "fan_speed"
 CONFIG_SCHEMA = (
     cv.COMPONENT_SCHEMA.extend(
         {
-            cv.GenerateID(): cv.declare_id(DaikinS21Sensor),
+            cv.GenerateID(CONF_S21_ID): cv.use_id(DaikinS21Sensor),
             cv.Optional(CONF_INSIDE_TEMP): sensor.sensor_schema(
                 unit_of_measurement=UNIT_CELSIUS,
                 icon=ICON_THERMOMETER,

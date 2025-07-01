@@ -25,6 +25,7 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Required(CONF_TX_UART): cv.use_id(UARTComponent),
         cv.Required(CONF_RX_UART): cv.use_id(UARTComponent),
         cv.Optional(CONF_DEBUG_PROTOCOL, default=False): cv.boolean,
+        cv.Optional(CONF_S21_ID): cv.use_id(DaikinS21Client),
     }
 ).extend(cv.polling_component_schema("2s"))
 

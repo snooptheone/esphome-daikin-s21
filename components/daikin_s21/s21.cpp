@@ -1,3 +1,4 @@
+#include <cinttypes>
 #include "s21.h"
 
 using namespace esphome;
@@ -87,6 +88,8 @@ int16_t temp_bytes_to_c10(std::vector<uint8_t> &bytes) {
   return temp_bytes_to_c10(&bytes[0]);
 }
 
+int16_t temp_f9_byte_to_c10(uint8_t *bytes) { return (*bytes / 2 - 64) * 10; }
+
 uint8_t c10_to_setpoint_byte(int16_t setpoint) {
   return (setpoint + 3) / 5 + 28;
 }
@@ -107,7 +110,7 @@ void DaikinS21::check_uart_settings() {
       ESP_LOGE(
           TAG,
           "  Invalid baud_rate: Integration requested baud_rate %u but you "
-          "have %u!",
+          "have %" PRIu32 "!",
           S21_BAUD_RATE, uart->get_baud_rate());
     }
     if (uart->get_stop_bits() != S21_STOP_BITS) {
@@ -135,7 +138,7 @@ void DaikinS21::check_uart_settings() {
 
 void DaikinS21::dump_config() {
   ESP_LOGCONFIG(TAG, "DaikinS21:");
-  ESP_LOGCONFIG(TAG, "  Update interval: %u", this->get_update_interval());
+  ESP_LOGCONFIG(TAG, "  Update interval: %" PRIu32, this->get_update_interval());
   this->check_uart_settings();
 }
 
@@ -237,10 +240,15 @@ bool DaikinS21::read_frame(std::vector<uint8_t> &payload) {
         bytes.pop_back();
         uint8_t calc_csum = s21_checksum(bytes);
         if (calc_csum != frame_csum) {
-          ESP_LOGW(TAG, "Checksum mismatch: %x (frame) != %x (calc from %s)",
-                   frame_csum, calc_csum,
-                   hex_repr(&bytes[0], bytes.size()).c_str());
-          return false;
+          if (bytes[0] == 0x47 && bytes[1] == 0x39) {
+            calc_csum += 2;
+          }
+          if (calc_csum != frame_csum) {
+            ESP_LOGW(TAG, "Checksum mismatch: %x (frame) != %x (calc from %s)",
+            frame_csum, calc_csum,
+            hex_repr(&bytes[0], bytes.size()).c_str());
+            return false;
+          }
         }
         break;
       }
@@ -333,6 +341,10 @@ bool DaikinS21::parse_response(std::vector<uint8_t> rcode,
         case '7':                // F7 - G7 - "eco" mode
           this->econo = (payload[1] == '2') ? 1 : 0;
           return true;
+        case '9':  // F9 -> G9 -- Inside temperature
+          this->temp_inside = temp_f9_byte_to_c10(&payload[0]);
+          this->temp_outside = temp_f9_byte_to_c10(&payload[1]);
+          return true;
       }
       break;
     case 'S':      // R -> S
@@ -383,14 +395,15 @@ bool DaikinS21::run_queries(std::vector<std::string> queries) {
 void DaikinS21::update() {
   std::vector<std::string> queries;
   if(has_presets)
-    queries = {"F1", "F5", "F6", "F7",  "RH", "RI", "Ra", "RL", "Rd"};
+    queries = {"F1", "F5", "F6", "F7",  "RH", "RI", "Rd"};
   else
     queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
+  // These queries might fail but they won't affect the basic functionality
+  std::vector<std::string> failable_queries = {"F9", "RH", "RI", "Ra", "RL"};
   // std::vector<std::string> queries = {"F1", "F5", "RH", "RI", "Ra", "RL", "Rd"};
   // std::vector<std::string> failable_queries = {"F9", "FM", "F7", "F6", "F2", "F3", "F4", "F8", "RA", "Rb", "RB", "RC", "RD", "Re", "RE", "RF", "Rg", "RG", "RK", "RM", "RN", "RW", "RX", "XA", "XE"};
   if (this->run_queries(queries)) {
-    // ESP_LOGD(TAG, "** FAILABLE QUERIES **");
-    // this->run_queries(failable_queries);
+    this->run_queries(failable_queries);
     if(!this->ready) {
       ESP_LOGI(TAG, "Daikin S21 Ready");
       this->ready = true;

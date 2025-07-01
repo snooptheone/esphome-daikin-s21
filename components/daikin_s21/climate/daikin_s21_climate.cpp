@@ -1,3 +1,6 @@
+#pragma once
+
+#include <cinttypes>
 #include "esphome/core/defines.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
@@ -24,7 +27,7 @@ void DaikinS21Climate::setup() {
 
 void DaikinS21Climate::dump_config() {
   ESP_LOGCONFIG(TAG, "DaikinS21Climate:");
-  ESP_LOGCONFIG(TAG, "  Update interval: %u", this->get_update_interval());
+  ESP_LOGCONFIG(TAG, " Update interval: %" PRIu32, this->get_update_interval());
   if (this->room_sensor_ != nullptr) {
     if (!this->room_sensor_unit_is_valid()) {
       ESP_LOGCONFIG(TAG, "  ROOM SENSOR: INVALID UNIT '%s' (must be °C or °F)",
@@ -245,8 +248,6 @@ DaikinClimateMode DaikinS21Climate::e2d_climate_mode(
 
 const std::string DaikinS21Climate::d2e_fan_mode(DaikinFanMode mode) {
   switch (mode) {
-    case DaikinFanMode::Silent:
-      return "Silent";
     case DaikinFanMode::Speed1:
       return "1";
     case DaikinFanMode::Speed2:
@@ -257,6 +258,8 @@ const std::string DaikinS21Climate::d2e_fan_mode(DaikinFanMode mode) {
       return "4";
     case DaikinFanMode::Speed5:
       return "5";
+    case DaikinFanMode::Silent:
+      return "Silent";
     case DaikinFanMode::Auto:
     default:
       return "Automatic";
