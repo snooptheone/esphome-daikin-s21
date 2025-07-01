@@ -33,7 +33,7 @@ CONF_FAN_SPEED = "fan_speed"
 CONFIG_SCHEMA = (
     cv.COMPONENT_SCHEMA.extend(
         {
-            cv.GenerateID(CONF_S21_ID): cv.use_id(DaikinS21Sensor),
+            cv.GenerateID(): cv.declare_id(DaikinS21Sensor),
             cv.Optional(CONF_INSIDE_TEMP): sensor.sensor_schema(
                 unit_of_measurement=UNIT_CELSIUS,
                 icon=ICON_THERMOMETER,
